@@ -1,6 +1,6 @@
 # Raw data (large files)
 data/raw/
-
+data/processed/gujarat_risk_scores.csv
 # Python cache
 __pycache__/
 *.py[cod]

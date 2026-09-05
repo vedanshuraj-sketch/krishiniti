@@ -1,0 +1,22 @@
+# Raw data (large files)
+data/raw/
+data/processed/gujarat_risk_scores.csv
+data/processed/gujarat_anomalies.csv
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Model files (will add later)
+models/*.pkl
+models/*.joblib
+models/*.pt
+
+# Environment variables
+.env

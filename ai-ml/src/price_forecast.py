@@ -1,388 +1,542 @@
 """
-Short-term mandi price forecasting for KRISHINITI (Gujarat).
+KRISHINITI - Short-Term Mandi Price Forecasting
 
-Uses a simple Moving Average + Linear Trend model to forecast modal prices
-for a given commodity–market pair. Designed to be explainable for hackathon demos.
+Prototype forecasting module for SIH 2026.
 
-Usage:
-    python price_forecast.py
+Method:
+    1. Filter commodity + market
+    2. Aggregate prices by day
+    3. Use recent observations
+    4. Smooth prices with a moving average
+    5. Fit a linear trend
+    6. Forecast the next N days
+    7. Estimate confidence from history + volatility
+    8. Generate a simple uncertainty range
+
+This is an explainable statistical baseline, not a black-box ML model.
 """
 
-from __future__ import annotations
-
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-SCRIPT_DIR = Path(__file__).resolve().parent
-DATA_PATH = SCRIPT_DIR.parent / "data" / "processed" / "gujarat_prices_clean.csv"
 
-MIN_HISTORY_DAYS = 60   # Prefer at least this many daily observations
-MAX_HISTORY_DAYS = 90   # Use at most this many recent daily observations
-MA_WINDOW = 7           # Moving-average window (days)
+# ============================================================
+# CONFIGURATION
+# ============================================================
 
-# Coefficient of variation thresholds for confidence labelling
-CV_HIGH_THRESHOLD = 0.10    # Below this → stable prices
-CV_MEDIUM_THRESHOLD = 0.20  # Below this → moderate volatility
+BASE_DIR = Path(__file__).resolve().parents[2]
 
+DATA_PATH = (
+    BASE_DIR
+    / "data"
+    / "processed"
+    / "gujarat_prices_clean.csv"
+)
 
-@dataclass
-class ForecastResult:
-    """Container for a single forecast day."""
+MA_WINDOW = 7
+HISTORY_OBSERVATIONS = 60
+FORECAST_DAYS = 5
 
-    date: pd.Timestamp
-    predicted_price: float
-    lower_bound: float
-    upper_bound: float
+MIN_OBSERVATIONS = 14
 
-
-@dataclass
-class ForecastOutput:
-    """Full forecast response for a commodity–market pair."""
-
-    commodity: str
-    market: str
-    forecast_days: int
-    history_days_used: int
-    last_known_date: pd.Timestamp
-    last_known_price: float
-    forecasts: list[ForecastResult]
-    confidence: str          # "High" | "Medium" | "Low"
-    confidence_reason: str
-    trend_direction: str     # "Upward" | "Downward" | "Stable"
+# Confidence thresholds
+LOW_VOLATILITY_CV = 0.08
+HIGH_VOLATILITY_CV = 0.15
 
 
-# ---------------------------------------------------------------------------
-# Data loading & preparation
-# ---------------------------------------------------------------------------
+# ============================================================
+# DATA
+# ============================================================
 
+def load_data(path: Path = DATA_PATH) -> pd.DataFrame:
+    """Load cleaned Gujarat mandi price data."""
 
-def load_gujarat_data(csv_path: Path = DATA_PATH) -> pd.DataFrame:
-    """Load the cleaned Gujarat price CSV and parse dates."""
-    df = pd.read_csv(csv_path, parse_dates=["date"])
-    df = df.sort_values("date").reset_index(drop=True)
+    df = pd.read_csv(path)
+
+    required = {
+        "date",
+        "commodity",
+        "market",
+        "modal_price",
+    }
+
+    missing = required - set(df.columns)
+
+    if missing:
+        raise ValueError(
+            f"Missing required columns: {sorted(missing)}"
+        )
+
+    df["date"] = pd.to_datetime(
+        df["date"],
+        errors="coerce"
+    )
+
+    df["modal_price"] = pd.to_numeric(
+        df["modal_price"],
+        errors="coerce"
+    )
+
+    df = df.dropna(
+        subset=[
+            "date",
+            "commodity",
+            "market",
+            "modal_price",
+        ]
+    )
+
+    df = df[df["modal_price"] > 0]
+
     return df
 
 
-def filter_commodity_market(
+# ============================================================
+# PREPARE PRICE SERIES
+# ============================================================
+
+def get_price_series(
     df: pd.DataFrame,
     commodity: str,
     market: str,
-) -> pd.DataFrame:
-    """Return rows matching the given commodity and market (case-insensitive)."""
-    mask = (
-        df["commodity"].str.lower() == commodity.lower()
-    ) & (
-        df["market"].str.lower() == market.lower()
-    )
-    return df.loc[mask].copy()
-
-
-def prepare_daily_series(
-    df: pd.DataFrame,
-    min_days: int = MIN_HISTORY_DAYS,
-    max_days: int = MAX_HISTORY_DAYS,
 ) -> pd.Series:
     """
-    Aggregate modal prices to one value per day (daily mean),
-    then keep the most recent window of 60–90 days when available.
-
-    Note this returns one row per day that actually *has* data, not one row
-    per calendar day in range — a market that reports 3x/week will have
-    gaps. `fit_linear_trend` below relies on this series' DatetimeIndex
-    (rather than row position) to account for those gaps correctly.
+    Get daily modal price series for one commodity-market pair.
     """
-    if df.empty:
-        return pd.Series(dtype=float)
 
-    # Average multiple entries on the same day
+    mask = (
+        df["commodity"].astype(str).str.strip().str.lower()
+        == commodity.strip().lower()
+    ) & (
+        df["market"].astype(str).str.strip().str.lower()
+        == market.strip().lower()
+    )
+
+    data = df.loc[mask].copy()
+
+    if data.empty:
+        raise ValueError(
+            f"No data found for {commodity} at {market}."
+        )
+
+    # If multiple records exist on the same day,
+    # use the daily mean modal price.
     daily = (
-        df.groupby("date")["modal_price"]
+        data.groupby("date")["modal_price"]
         .mean()
         .sort_index()
     )
 
-    # Use up to max_days; require at least min_days when possible
-    if len(daily) >= max_days:
-        daily = daily.iloc[-max_days:]
-    elif len(daily) >= min_days:
-        daily = daily.iloc[-min_days:]
-    # else: use whatever is available (confidence will reflect shortage)
+    # Keep only the most recent observations.
+    daily = daily.tail(HISTORY_OBSERVATIONS)
 
     return daily
 
 
-# ---------------------------------------------------------------------------
-# Forecasting helpers
-# ---------------------------------------------------------------------------
+# ============================================================
+# MOVING AVERAGE
+# ============================================================
+
+def moving_average(
+    prices: pd.Series,
+    window: int = MA_WINDOW,
+) -> pd.Series:
+    """Calculate trailing moving average."""
+
+    return prices.rolling(
+        window=window,
+        min_periods=1,
+    ).mean()
 
 
-def compute_moving_average(series: pd.Series, window: int = MA_WINDOW) -> pd.Series:
-    """Calculate a simple rolling mean over the price series."""
-    return series.rolling(window=window, min_periods=1).mean()
+# ============================================================
+# TREND
+# ============================================================
 
-
-def fit_linear_trend(ma_series: pd.Series) -> tuple[float, float]:
+def calculate_trend(
+    smoothed: pd.Series,
+) -> tuple[float, str]:
     """
-    Fit y = intercept + slope * x on the moving-average series, where x is
-    the actual number of elapsed calendar days since the series' first
-    observation — not the row position.
+    Calculate price trend using linear regression.
 
-    Why this matters: `prepare_daily_series` only keeps days that actually
-    have data. For a market that reports irregularly (e.g. 3x/week), row N
-    and row N+1 might be 1 day apart or a week apart. Fitting against row
-    position (the old `np.arange(len(ma_series))` approach) silently treats
-    every gap as exactly one day, so the fitted slope comes out in
-    price-per-row rather than price-per-day. `generate_forecasts` then
-    projects that slope forward using real `pd.Timedelta(days=...)` steps,
-    so a price-per-row slope gets misapplied as a price-per-day slope and
-    the forecast drifts at the wrong rate — worse the more irregular the
-    reporting, and with no error raised.
-
-    Returns (slope, last_ma_value) where slope is the price change per
-    calendar day.
+    Returns:
+        slope per calendar day
+        trend direction
     """
-    if not isinstance(ma_series.index, pd.DatetimeIndex):
-        raise TypeError(
-            "fit_linear_trend requires ma_series to be indexed by date "
-            "(got index type %r) so the trend can be fit against real "
-            "elapsed days rather than row position." % type(ma_series.index).__name__
-        )
 
-    elapsed_days = (ma_series.index - ma_series.index[0]).days
-    x = np.asarray(elapsed_days, dtype=float)
-    y = ma_series.values
-    slope, intercept = np.polyfit(x, y, 1)
-    last_ma = float(ma_series.iloc[-1])
-    return float(slope), last_ma
+    if len(smoothed) < 2:
+        return 0.0, "Stable"
+
+    days = (
+        smoothed.index - smoothed.index[0]
+    ).days.astype(float)
+
+    prices = smoothed.to_numpy(dtype=float)
+
+    slope, _ = np.polyfit(
+        days,
+        prices,
+        1,
+    )
+
+    last_price = float(smoothed.iloc[-1])
+
+    if last_price <= 0:
+        return float(slope), "Stable"
+
+    daily_change_percent = (
+        slope / last_price
+    ) * 100
+
+    if abs(daily_change_percent) < 0.3:
+        direction = "Stable"
+    elif slope > 0:
+        direction = "Upward"
+    else:
+        direction = "Downward"
+
+    return float(slope), direction
 
 
-def generate_forecasts(
-    last_date: pd.Timestamp,
-    last_ma: float,
-    slope: float,
-    forecast_days: int,
-    price_std: float,
-    confidence: str,
-) -> list[ForecastResult]:
+# ============================================================
+# CONFIDENCE
+# ============================================================
+
+def calculate_confidence(
+    prices: pd.Series,
+) -> tuple[str, str, float]:
     """
-    Project prices forward using: forecast = last_MA + slope * day_offset.
+    Estimate forecast confidence.
 
-    `slope` must already be denominated in price-per-calendar-day (see
-    `fit_linear_trend`) since `day_offset` here is real calendar days via
-    `pd.Timedelta`.
+    Confidence is based on:
+        - amount of historical data
+        - recent price volatility
 
-    Uncertainty band width scales with recent volatility and confidence level.
+    Returns:
+        confidence level
+        explanation
+        coefficient of variation
     """
-    # Wider bands when confidence is lower
-    band_multiplier = {"High": 1.0, "Medium": 1.5, "Low": 2.0}.get(confidence, 2.0)
-    half_band = price_std * band_multiplier
 
-    results: list[ForecastResult] = []
-    for day in range(1, forecast_days + 1):
-        predicted = last_ma + slope * day
-        forecast_date = last_date + pd.Timedelta(days=day)
-        results.append(
-            ForecastResult(
-                date=forecast_date,
-                predicted_price=round(predicted, 2),
-                lower_bound=round(max(predicted - half_band, 0), 2),
-                upper_bound=round(predicted + half_band, 2),
-            )
-        )
-    return results
+    observations = len(prices)
 
+    mean_price = prices.mean()
 
-# ---------------------------------------------------------------------------
-# Confidence assessment
-# ---------------------------------------------------------------------------
-
-
-def assess_confidence(daily: pd.Series) -> tuple[str, str]:
-    """
-    Rule-based confidence from data quantity and recent volatility.
-
-    Uses coefficient of variation (CV = std / mean):
-      - High   → enough history AND low volatility
-      - Medium → moderate volatility OR limited history
-      - Low    → high volatility OR very little data
-    """
-    n_days = len(daily)
-
-    if n_days < 30:
+    if mean_price <= 0:
         return (
             "Low",
-            f"Only {n_days} days of data available (need ≥30 for reliable forecast).",
+            "Invalid average price.",
+            float("inf"),
         )
 
-    cv = daily.std() / daily.mean() if daily.mean() > 0 else float("inf")
+    cv = prices.std() / mean_price
 
-    if n_days >= MIN_HISTORY_DAYS and cv < CV_HIGH_THRESHOLD:
+    # Very little historical data
+    if observations < MIN_OBSERVATIONS:
+        return (
+            "Low",
+            f"Only {observations} observations available.",
+            cv,
+        )
+
+    # Stable prices + enough data
+    if (
+        observations >= 30
+        and cv < LOW_VOLATILITY_CV
+    ):
         return (
             "High",
-            f"{n_days} days of history with low price volatility (CV={cv:.1%}).",
+            "Sufficient history with relatively stable prices.",
+            cv,
         )
 
-    if n_days >= 30 and cv < CV_MEDIUM_THRESHOLD:
+    # Moderate conditions
+    if cv < HIGH_VOLATILITY_CV:
         return (
             "Medium",
-            f"{n_days} days of history with moderate volatility (CV={cv:.1%}).",
+            "Moderate price variation in recent history.",
+            cv,
         )
 
+    # Highly variable prices
     return (
         "Low",
-        f"High price volatility (CV={cv:.1%}) makes short-term prediction uncertain.",
+        "High recent price volatility makes forecasting uncertain.",
+        cv,
     )
 
 
-def describe_trend(slope: float, last_ma: float) -> str:
-    """Convert daily slope into a human-readable trend label."""
-    pct_change = (slope / last_ma) * 100 if last_ma > 0 else 0
-    if abs(pct_change) < 0.3:
-        return "Stable"
-    return "Upward" if slope > 0 else "Downward"
+# ============================================================
+# FORECAST
+# ============================================================
+
+def generate_forecast(
+    prices: pd.Series,
+    slope: float,
+    confidence: str,
+    forecast_days: int,
+) -> pd.DataFrame:
+    """
+    Generate future price predictions.
+
+    The uncertainty band is based on recent price variation.
+    """
+
+    smoothed = moving_average(prices)
+
+    last_date = prices.index[-1]
+    last_smoothed_price = float(smoothed.iloc[-1])
+
+    # Recent price volatility.
+    price_std = float(prices.std())
+
+    # Wider interval for lower confidence.
+    multiplier = {
+        "High": 1.0,
+        "Medium": 1.5,
+        "Low": 2.0,
+    }[confidence]
+
+    uncertainty = price_std * multiplier
+
+    rows = []
+
+    for day in range(1, forecast_days + 1):
+
+        predicted = (
+            last_smoothed_price
+            + slope * day
+        )
+
+        predicted = max(predicted, 0)
+
+        lower = max(
+            predicted - uncertainty,
+            0,
+        )
+
+        upper = predicted + uncertainty
+
+        rows.append(
+            {
+                "date": last_date
+                + pd.Timedelta(days=day),
+
+                "predicted_price": round(
+                    predicted,
+                    2,
+                ),
+
+                "lower_bound": round(
+                    lower,
+                    2,
+                ),
+
+                "upper_bound": round(
+                    upper,
+                    2,
+                ),
+            }
+        )
+
+    return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------------------
-# Main forecast function
-# ---------------------------------------------------------------------------
-
+# ============================================================
+# MAIN FORECAST FUNCTION
+# ============================================================
 
 def forecast_prices(
+    df: pd.DataFrame,
     commodity: str,
     market: str,
-    forecast_days: int = 5,
-    df: pd.DataFrame | None = None,
-) -> ForecastOutput | None:
+    forecast_days: int = FORECAST_DAYS,
+) -> dict:
     """
-    Forecast modal prices for the next `forecast_days` for a commodity–market pair.
+    Generate a short-term price forecast.
 
-    Parameters
-    ----------
-    commodity : str
-        Commodity name as it appears in the dataset (e.g. "Groundnut").
-    market : str
-        Market name as it appears in the dataset (e.g. "Rajkot").
-    forecast_days : int
-        Number of days to forecast ahead (default 5).
-    df : pd.DataFrame, optional
-        Pre-loaded data; loads from disk if not provided.
-
-    Returns
-    -------
-    ForecastOutput or None if no matching data found.
+    This is the main function that the backend can call later.
     """
-    if df is None:
-        df = load_gujarat_data()
 
-    # Step 1 – filter and sort
-    subset = filter_commodity_market(df, commodity, market)
-    if subset.empty:
-        print(f"No data found for commodity='{commodity}', market='{market}'.")
-        return None
+    if forecast_days < 1:
+        raise ValueError(
+            "forecast_days must be at least 1."
+        )
 
-    subset = subset.sort_values("date")
+    # --------------------------------------------------------
+    # Look up the price history for this commodity-market pair.
+    #
+    # get_price_series() raises ValueError when the pair doesn't
+    # exist in the data at all (e.g. a typo, or a commodity/market
+    # combination that was never reported). We catch that here and
+    # return a normal status dict instead of letting the exception
+    # propagate - callers (API, Decision Engine) should never have
+    # to wrap this in a try/except just to handle "unknown crop".
+    # --------------------------------------------------------
 
-    # Step 2 – build recent daily price window (60–90 days)
-    daily = prepare_daily_series(subset)
-    if len(daily) < 2:
-        print("Not enough price history to generate a forecast.")
-        return None
+    try:
+        prices = get_price_series(
+            df,
+            commodity,
+            market,
+        )
+    except ValueError:
+        return {
+            "status": "no_data",
+            "commodity": commodity,
+            "market": market,
+            "message": (
+                f"No price data found for "
+                f"{commodity} at {market}."
+            ),
+        }
 
-    # Step 3 – moving average + linear trend
-    ma = compute_moving_average(daily)
-    slope, last_ma = fit_linear_trend(ma)
-    price_std = float(daily.std())
+    if len(prices) < MIN_OBSERVATIONS:
+        return {
+            "status": "insufficient_data",
+            "commodity": commodity,
+            "market": market,
+            "message": (
+                f"Only {len(prices)} observations "
+                f"available. At least "
+                f"{MIN_OBSERVATIONS} are required."
+            ),
+        }
 
-    # Step 4 – confidence
-    confidence, confidence_reason = assess_confidence(daily)
+    # Smooth prices.
+    smoothed = moving_average(prices)
 
-    # Step 5 – generate day-by-day forecasts
-    last_date = daily.index[-1]
-    forecasts = generate_forecasts(
-        last_date=last_date,
-        last_ma=last_ma,
+    # Calculate trend.
+    slope, trend = calculate_trend(smoothed)
+
+    # Calculate confidence.
+    confidence, confidence_reason, cv = (
+        calculate_confidence(prices)
+    )
+
+    # Generate forecasts.
+    forecast = generate_forecast(
+        prices=prices,
         slope=slope,
-        forecast_days=forecast_days,
-        price_std=price_std,
         confidence=confidence,
+        forecast_days=forecast_days,
     )
 
-    return ForecastOutput(
-        commodity=commodity,
-        market=market,
-        forecast_days=forecast_days,
-        history_days_used=len(daily),
-        last_known_date=last_date,
-        last_known_price=round(float(daily.iloc[-1]), 2),
-        forecasts=forecasts,
-        confidence=confidence,
-        confidence_reason=confidence_reason,
-        trend_direction=describe_trend(slope, last_ma),
-    )
+    return {
+        "status": "success",
+
+        "commodity": commodity,
+
+        "market": market,
+
+        "history_observations": len(prices),
+
+        "last_date": prices.index[-1].strftime(
+            "%Y-%m-%d"
+        ),
+
+        "last_price": round(
+            float(prices.iloc[-1]),
+            2,
+        ),
+
+        "trend": trend,
+
+        "confidence": confidence,
+
+        "confidence_reason": confidence_reason,
+
+        "volatility_cv": round(
+            float(cv),
+            4,
+        ),
+
+        "forecast": forecast,
+    }
 
 
-# ---------------------------------------------------------------------------
-# Pretty printing
-# ---------------------------------------------------------------------------
+# ============================================================
+# DISPLAY
+# ============================================================
 
+def print_result(result: dict) -> None:
+    """Display forecast in terminal."""
 
-def print_forecast(result: ForecastOutput) -> None:
-    """Print forecast results in a clean, readable format."""
     print("\n" + "=" * 65)
-    print("  KRISHINITI - Short-Term Price Forecast")
+    print("KRISHINITI - PRICE FORECAST")
     print("=" * 65)
-    print(f"  Commodity      : {result.commodity}")
-    print(f"  Market         : {result.market}")
-    print(f"  History used   : {result.history_days_used} days")
-    print(f"  Last known date: {result.last_known_date.strftime('%d %b %Y')}")
-    print(f"  Last price     : Rs.{result.last_known_price:,.2f} / quintal")
-    print(f"  Trend          : {result.trend_direction}")
-    print(f"  Confidence     : {result.confidence}")
-    print(f"  Reason         : {result.confidence_reason}")
-    print("-" * 65)
-    print(f"  {'Date':<14} {'Predicted':>12} {'Range (Rs.)':>22}")
-    print("-" * 65)
 
-    for fc in result.forecasts:
-        date_str = fc.date.strftime("%d %b %Y")
-        range_str = f"{fc.lower_bound:,.0f} - {fc.upper_bound:,.0f}"
-        print(f"  {date_str:<14} Rs.{fc.predicted_price:>9,.2f}   {range_str:>22}")
+    # "insufficient_data" and "no_data" both stop before a forecast
+    # table exists, so both just print their message and return.
+    if result["status"] in ("insufficient_data", "no_data"):
+        print(result["message"])
+        return
 
-    print("=" * 65 + "\n")
-
-
-# ---------------------------------------------------------------------------
-# Example run
-# ---------------------------------------------------------------------------
-
-
-def main() -> None:
-    """Load data and run an example forecast."""
-    print("Loading Gujarat price data...")
-    df = load_gujarat_data()
-    print(f"  Loaded {len(df):,} records across {df['commodity'].nunique()} commodities.")
-
-    # Groundnut + Rajkot has the richest history in the dataset (714 records)
-    example_commodity = "Groundnut"
-    example_market = "Rajkot"
-    example_days = 5
-
-    print(f"\nRunning example forecast: {example_commodity} @ {example_market}")
-    result = forecast_prices(
-        commodity=example_commodity,
-        market=example_market,
-        forecast_days=example_days,
-        df=df,
+    print(f"Commodity       : {result['commodity']}")
+    print(f"Market          : {result['market']}")
+    print(
+        f"History         : "
+        f"{result['history_observations']} observations"
+    )
+    print(
+        f"Last price      : "
+        f"Rs {result['last_price']:,.2f}"
+    )
+    print(f"Trend           : {result['trend']}")
+    print(f"Confidence      : {result['confidence']}")
+    print(
+        f"Reason          : "
+        f"{result['confidence_reason']}"
     )
 
-    if result:
-        print_forecast(result)
+    print("-" * 65)
+
+    print(
+        f"{'Date':<15}"
+        f"{'Forecast':>15}"
+        f"{'Lower':>15}"
+        f"{'Upper':>15}"
+    )
+
+    print("-" * 65)
+
+    for _, row in result["forecast"].iterrows():
+
+        print(
+            f"{row['date'].strftime('%d %b %Y'):<15}"
+            f"Rs {row['predicted_price']:>12,.2f}"
+            f"Rs {row['lower_bound']:>12,.2f}"
+            f"Rs {row['upper_bound']:>12,.2f}"
+        )
+
+    print("=" * 65)
+
+
+# ============================================================
+# TEST RUN
+# ============================================================
+
+def main():
+
+    print("Loading Gujarat mandi data...")
+
+    df = load_data()
+
+    print(
+        f"Loaded {len(df):,} rows."
+    )
+
+    # Example for testing.
+    result = forecast_prices(
+        df=df,
+        commodity="Groundnut",
+        market="Rajkot",
+        forecast_days=5,
+    )
+
+    print_result(result)
 
 
 if __name__ == "__main__":

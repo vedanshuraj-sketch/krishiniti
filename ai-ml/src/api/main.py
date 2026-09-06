@@ -221,6 +221,49 @@ def _lookup_latest(
     return _row_to_dict(latest)
 
 
+def _build_overall_explanation(
+    forecast_result: dict,
+    risk_row: Optional[dict],
+    anomaly_row: Optional[dict],
+) -> str:
+    """
+    Combine the forecast, risk, and anomaly explanations into one
+    farmer-facing summary sentence for /summary.
+    """
+
+    parts = []
+
+    if forecast_result.get("status") == "success":
+        parts.append(forecast_result["explanation"])
+    else:
+        parts.append(
+            forecast_result.get(
+                "message", "No forecast available."
+            )
+        )
+
+    if anomaly_row and anomaly_row.get("anomaly_status") == "ok":
+        if anomaly_row.get("anomaly_flag"):
+            parts.append(anomaly_row["explanation"])
+            # Anomaly is a guardrail - if flagged, say so plainly and
+            # stop here rather than also giving risk-based advice on
+            # data that may not be trustworthy.
+            parts.append(
+                "Because of this unusual activity, treat the "
+                "forecast and risk score with caution."
+            )
+            return " ".join(parts)
+
+    if risk_row and risk_row.get("risk_status") == "ok":
+        parts.append(risk_row["explanation"])
+    else:
+        parts.append(
+            "Not enough history yet to assess the risk of waiting."
+        )
+
+    return " ".join(parts)
+
+
 # ============================================================
 # ROUTES
 # ============================================================
@@ -359,10 +402,15 @@ def get_summary(
     risk_row = _lookup_latest(_risk_df, commodity, market, date=None)
     anomaly_row = _lookup_latest(_anomaly_df, commodity, market, date=None)
 
+    overall_explanation = _build_overall_explanation(
+        forecast_result, risk_row, anomaly_row
+    )
+
     return {
         "commodity": commodity,
         "market": market,
         "forecast": forecast_result,
         "risk": risk_row or {"status": "no_data"},
         "anomaly": anomaly_row or {"status": "no_data"},
+        "overall_explanation": overall_explanation,
     }

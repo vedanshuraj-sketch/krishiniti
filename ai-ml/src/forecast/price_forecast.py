@@ -269,6 +269,52 @@ def calculate_confidence(
 
 
 # ============================================================
+# EXPLANATION
+# ============================================================
+
+def explain_forecast(
+    commodity: str,
+    market: str,
+    trend: str,
+    confidence: str,
+    confidence_reason: str,
+    last_price: float,
+    predicted_price: float,
+) -> str:
+    """Create a simple, farmer-facing explanation for the forecast."""
+
+    if trend == "Upward":
+        direction_text = "expected to rise"
+    elif trend == "Downward":
+        direction_text = "expected to fall"
+    else:
+        direction_text = "expected to stay stable"
+
+    price_note = (
+        f"from around Rs {last_price:,.0f} to "
+        f"Rs {predicted_price:,.0f}"
+        if trend != "Stable"
+        else f"near Rs {last_price:,.0f}"
+    )
+
+    confidence_note = {
+        "High": "This forecast is based on solid, consistent history.",
+        "Medium": "This forecast has moderate uncertainty.",
+        "Low": (
+            "This forecast is uncertain - "
+            + confidence_reason.rstrip(".").lower()
+            + "."
+        ),
+    }[confidence]
+
+    return (
+        f"{commodity} prices at {market} are {direction_text} "
+        f"({price_note}) over the forecast period. "
+        f"{confidence_note}"
+    )
+
+
+# ============================================================
 # FORECAST
 # ============================================================
 
@@ -424,6 +470,18 @@ def forecast_prices(
         forecast_days=forecast_days,
     )
 
+    last_price_value = float(prices.iloc[-1])
+
+    explanation = explain_forecast(
+        commodity=commodity,
+        market=market,
+        trend=trend,
+        confidence=confidence,
+        confidence_reason=confidence_reason,
+        last_price=last_price_value,
+        predicted_price=float(forecast.iloc[-1]["predicted_price"]),
+    )
+
     return {
         "status": "success",
 
@@ -438,7 +496,7 @@ def forecast_prices(
         ),
 
         "last_price": round(
-            float(prices.iloc[-1]),
+            last_price_value,
             2,
         ),
 
@@ -452,6 +510,8 @@ def forecast_prices(
             float(cv),
             4,
         ),
+
+        "explanation": explanation,
 
         "forecast": forecast,
     }

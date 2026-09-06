@@ -10,19 +10,37 @@ endpoints instead.
 
 ---
 
-## Running it locally
+## Base URL — use this one
+
+```
+https://krishiniti-ai-ml.onrender.com
+```
+
+This is deployed and live. You don't need to run anything locally to
+call it — just hit this URL directly from Backend or Android.
+
+**⚠️ Cold start:** this is on Render's free tier, which sleeps after
+~15 minutes of no traffic. The first request after sleeping takes
+30-50 seconds to respond while it wakes up. If you're about to test or
+demo, open `/health` in a browser first to wake it up, then it responds
+instantly for a while after that. This isn't a bug — just how the free
+tier works.
+
+Interactive docs (try every endpoint from the browser, no code needed):
+```
+https://krishiniti-ai-ml.onrender.com/docs
+```
+
+---
+
+## Running it locally (for development only — not needed to use the API)
 
 ```powershell
 cd ai-ml
 py -m uvicorn src.api.main:app --reload --port 8000
 ```
 
-Interactive docs (try every endpoint from the browser, no code needed):
-```
-http://127.0.0.1:8000/docs
-```
-
-Base URL for all requests below: `http://127.0.0.1:8000`
+Base URL when running locally: `http://127.0.0.1:8000`
 
 ---
 
@@ -49,7 +67,7 @@ Confirms the service is up and how much data it loaded.
 ```json
 {
   "status": "ok",
-  "price_rows_loaded": 107555,
+  "price_rows_loaded": 112980,
   "risk_rows_loaded": 102006,
   "anomaly_rows_loaded": 104279
 }
@@ -79,6 +97,7 @@ GET /summary?commodity=Groundnut&market=Rajkot&days=5
     "confidence": "High",
     "confidence_reason": "Sufficient history with relatively stable prices.",
     "volatility_cv": 0.0671,
+    "explanation": "Groundnut prices at Rajkot are expected to stay stable (near Rs 5,075) over the forecast period. This forecast is based on solid, consistent history.",
     "forecast": [
       { "date": "2025-08-13", "predicted_price": 5144.01, "lower_bound": 4782.44, "upper_bound": 5505.59 }
     ]
@@ -95,7 +114,8 @@ GET /summary?commodity=Groundnut&market=Rajkot&days=5
     "anomaly_score": 0.0,
     "anomaly_status": "ok",
     "explanation": "No unusual price behaviour detected."
-  }
+  },
+  "overall_explanation": "Groundnut prices at Rajkot are expected to stay stable (near Rs 5,075) over the forecast period. This forecast is based on solid, consistent history. Medium Risk because moderate price volatility and prices are relatively stable."
 }
 ```
 
@@ -103,7 +123,8 @@ GET /summary?commodity=Groundnut&market=Rajkot&days=5
 - `forecast.confidence` = "Low" → soften or suppress any "wait for a better price" recommendation. Low confidence means the trend/prediction shouldn't be trusted much.
 - `risk.risk_level` = "High" → leans toward recommending sell now, even if the forecast trend says wait. This is the main tension your Sell/Store/Split logic needs to arbitrate.
 - `anomaly.anomaly_flag` = `true` → treat the forecast and risk numbers for this pair with reduced trust. Consider showing "unusual market activity — recommend checking manually" instead of a specific number.
-- `risk.explanation` / `anomaly.explanation` → pass these straight through to your own recommendation output rather than regenerating reasoning. Keeps the "why" consistent with the actual model logic.
+- `overall_explanation` → a single ready-to-display sentence combining forecast + risk (and anomaly caution, if flagged). Use this directly if you want one explanation string instead of stitching the three together yourself.
+- `risk.explanation` / `anomaly.explanation` / `forecast.explanation` → pass these straight through to your own recommendation output rather than regenerating reasoning. Keeps the "why" consistent with the actual model logic.
 
 ---
 
@@ -170,19 +191,20 @@ means unknown, not safe.**
 
 ---
 
-## Data freshness — important
+## Data freshness — important, and different now that this is deployed
 
-- `/forecast` runs the model **live** against `gujarat_prices_clean.csv` every request.
-- `/risk` and `/anomaly` are served from **pre-computed CSVs** (`gujarat_risk_scores.csv`, `gujarat_anomalies.csv`), loaded into memory once when the API starts.
-- If the underlying price data changes, someone needs to re-run `risk_score.py` and `anomaly_detection.py`, **then restart the API**, for `/risk` and `/anomaly` to reflect it. This won't happen automatically.
+- `/forecast` runs the model **live** against `gujarat_prices_clean.csv` every request, so it's always current with whatever's in the deployed repo.
+- `/risk` and `/anomaly` are served from **pre-computed CSVs** (`gujarat_risk_scores.csv`, `gujarat_anomalies.csv`), loaded into memory once when the service starts.
+- To refresh `/risk` or `/anomaly` with new data: re-run `risk_score.py` / `anomaly_detection.py` locally, commit the updated CSVs, and push to GitHub. **Render automatically redeploys on push** — no manual restart needed, but it does mean a few minutes of redeploy time before the new data is live.
 
 ---
 
 ## Known limitations (be aware, not blockers for demo)
 
 - Not every commodity-market-date will have a forecast, risk score, AND anomaly result all present at once — coverage can differ slightly between pipeline stages. Decide whether your logic requires all three before recommending, or degrades gracefully if one is `no_data`.
-- CORS is currently wide open (`allow_origins=["*"]`) for ease of local development. Fine for the hackathon; note it as a "tighten before real deployment" item if this ever goes further.
+- CORS is currently wide open (`allow_origins=["*"]`) for ease of development. Fine for the hackathon; note it as a "tighten before real deployment" item if this ever goes further.
 - Anomaly detection currently flags ~7% of records — tuned loosely for a prototype, not a strict statistical threshold.
+- Free-tier cold start (see top of this doc) — plan around it for live demos.
 
 ---
 

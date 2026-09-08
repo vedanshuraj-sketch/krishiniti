@@ -1,180 +1,345 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React from 'react';
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+type CropLot = {
+  id: string;
+  crop: string;
+  emoji: string;
+  quantity: string;
+  grade: string;
+  location: string;
+  price: string;
+  available: string;
+};
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+const cropLots: CropLot[] = [
+  {
+    id: '1',
+    crop: 'Tomato',
+    emoji: '🍅',
+    quantity: '25 quintals',
+    grade: 'Grade A',
+    location: 'Ahmedabad',
+    price: '₹2,720',
+    available: 'Available today',
+  },
+  {
+    id: '2',
+    crop: 'Potato',
+    emoji: '🥔',
+    quantity: '40 quintals',
+    grade: 'Grade A',
+    location: 'Mehsana',
+    price: '₹1,950',
+    available: 'Available today',
+  },
+  {
+    id: '3',
+    crop: 'Onion',
+    emoji: '🧅',
+    quantity: '30 quintals',
+    grade: 'Grade B',
+    location: 'Rajkot',
+    price: '₹2,350',
+    available: 'Available tomorrow',
+  },
+];
+
+export default function ExploreScreen() {
+  const handleViewLot = (lot: CropLot) => {
+    Alert.alert(
+      `${lot.emoji} ${lot.crop} — Crop Lot`,
+      `Quantity: ${lot.quantity}\nQuality: ${lot.grade}\nLocation: ${lot.location}\nExpected price: ${lot.price} / quintal\nAvailability: ${lot.available}`,
+      [
+        {
+          text: 'Contact Farmer',
+          onPress: () =>
+            Alert.alert(
+              'Interest Sent',
+              `Your interest in the ${lot.crop} lot has been recorded.`,
+            ),
+        },
+        {
+          text: 'Close',
+          style: 'cancel',
+        },
+      ],
+    );
   };
-  const theme = useTheme();
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+  const renderLot = ({ item }: { item: CropLot }) => (
+    <View style={styles.card}>
+      <View style={styles.cardTop}>
+        <View style={styles.cropIcon}>
+          <Text style={styles.cropEmoji}>{item.emoji}</Text>
+        </View>
+
+        <View style={styles.cropInfo}>
+          <Text style={styles.cropName}>{item.crop}</Text>
+          <Text style={styles.location}>{item.location}</Text>
+        </View>
+
+        <View style={styles.priceBox}>
+          <Text style={styles.price}>{item.price}</Text>
+          <Text style={styles.priceUnit}>/ quintal</Text>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.detailsRow}>
+        <View>
+          <Text style={styles.detailLabel}>QUANTITY</Text>
+          <Text style={styles.detailValue}>{item.quantity}</Text>
+        </View>
+
+        <View>
+          <Text style={styles.detailLabel}>QUALITY</Text>
+          <Text style={styles.detailValue}>{item.grade}</Text>
+        </View>
+
+        <View style={styles.availabilityBox}>
+          <Text style={styles.available}>{item.available}</Text>
+        </View>
+      </View>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.viewButton,
+          pressed && styles.buttonPressed,
+        ]}
+        onPress={() => handleViewLot(item)}
+      >
+        <Text style={styles.viewButtonText}>View crop lot</Text>
+        <Text style={styles.arrow}>→</Text>
+      </Pressable>
+    </View>
+  );
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <SafeAreaView style={styles.safeArea}>
+      <FlatList
+        data={cropLots}
+        keyExtractor={(item) => item.id}
+        renderItem={renderLot}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.eyebrow}>BUYER MARKET</Text>
+            <Text style={styles.title}>Find fresh crop lots</Text>
+            <Text style={styles.subtitle}>
+              Connect with farmers and source crops directly.
+            </Text>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+            <View style={styles.summary}>
+              <Text style={styles.summaryNumber}>{cropLots.length}</Text>
+              <Text style={styles.summaryText}>active crop lots</Text>
+            </View>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+            <Text style={styles.sectionTitle}>Available lots</Text>
+          </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  safeArea: {
     flex: 1,
+    backgroundColor: '#F5F7F2',
   },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
+
   container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 32,
   },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+
+  header: {
+    marginBottom: 18,
   },
-  centerText: {
-    textAlign: 'center',
+
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    color: '#66736A',
+    marginBottom: 8,
   },
-  pressed: {
-    opacity: 0.7,
+
+  title: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#172019',
   },
-  linkButton: {
+
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#66736A',
+    marginTop: 7,
+    maxWidth: 330,
+  },
+
+  summary: {
+    marginTop: 18,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: '#EAF1E7',
     flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
+    alignItems: 'baseline',
+  },
+
+  summaryNumber: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#315B38',
+    marginRight: 7,
+  },
+
+  summaryText: {
+    fontSize: 13,
+    color: '#526356',
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#172019',
+    marginTop: 24,
+  },
+
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E1E7DF',
+  },
+
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  cropIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: '#EEF3EA',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.one,
+  },
+
+  cropEmoji: {
+    fontSize: 24,
+  },
+
+  cropInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  cropName: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#172019',
+  },
+
+  location: {
+    fontSize: 12,
+    color: '#707B73',
+    marginTop: 3,
+  },
+
+  priceBox: {
+    alignItems: 'flex-end',
+    marginLeft: 8,
+  },
+
+  price: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#315B38',
+  },
+
+  priceUnit: {
+    fontSize: 10,
+    color: '#78837B',
+    marginTop: 2,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#E8ECE6',
+    marginVertical: 15,
+  },
+
+  detailsRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+
+  detailLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: '#8A938C',
+    marginBottom: 4,
   },
-  collapsibleContent: {
+
+  detailValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#303A32',
+  },
+
+  availabilityBox: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+
+  available: {
+    fontSize: 10,
+    color: '#5B735F',
+    textAlign: 'right',
+  },
+
+  viewButton: {
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: '#315B38',
+    marginTop: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
+
+  buttonPressed: {
+    opacity: 0.8,
   },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
+
+  viewButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+
+  arrow: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    marginLeft: 8,
+    marginBottom: 8,
   },
 });

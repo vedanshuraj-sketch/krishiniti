@@ -1,64 +1,71 @@
 import React, { useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import
+  {
+    Alert,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+  } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 
-export default function CropLotScreen() {
+export default function CropLotScreen()
+{
   const [crop, setCrop] = useState('');
   const [quantity, setQuantity] = useState('');
   const [grade, setGrade] = useState('');
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
   const [certificate, setCertificate] =
-  useState<DocumentPicker.DocumentPickerAsset | null>(null);
+    useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
- const handleSubmit = () => {
-  if (!crop || !quantity || !grade || !price || !location || !certificate) {
+  const handleSubmit = () =>
+  {
+    if (!crop || !quantity || !grade || !price || !location || !certificate)
+    {
+      Alert.alert(
+        'Incomplete form',
+        'Please fill in all fields and upload the crop certificate.',
+      );
+      return;
+    }
+
     Alert.alert(
-      'Incomplete form',
-      'Please fill in all fields and upload the crop certificate.',
-    );
-    return;
-  }
-
-  Alert.alert(
-    'Crop lot listed',
-    `${crop} • ${quantity} quintals\nExpected price: ₹${price} / quintal\nLocation: ${location}`,
-    [
-      {
-        text: 'OK',
-        onPress: () => {
-          // Clear all fields
-          setCrop('');
-          setQuantity('');
-          setGrade('');
-          setPrice('');
-          setLocation('');
-          setCertificate(null);
+      'Crop lot listed',
+      `${crop} • ${quantity} quintals\nExpected price: ₹${price} / quintal\nLocation: ${location}`,
+      [
+        {
+          text: 'OK',
+          onPress: () =>
+          {
+            // Clear all fields
+            setCrop('');
+            setQuantity('');
+            setGrade('');
+            setPrice('');
+            setLocation('');
+            setCertificate(null);
+          },
         },
-      },
-    ],
-  );
-};
-  const handleCertificateUpload = async () => {
-  const result = await DocumentPicker.getDocumentAsync({
-    type: ['image/*', 'application/pdf'],
-    copyToCacheDirectory: true,
-    multiple: false,
-  });
+      ],
+    );
+  };
+  const handleCertificateUpload = async () =>
+  {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ['image/*', 'application/pdf'],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
 
-  if (!result.canceled) {
-    setCertificate(result.assets[0]);
-  }
-};
+    if (!result.canceled)
+    {
+      setCertificate(result.assets[0]);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -135,33 +142,33 @@ export default function CropLotScreen() {
 
           <Text style={styles.label}>CROP CERTIFICATE</Text>
 
-<Pressable
-  style={({ pressed }) => [
-    styles.uploadBox,
-    pressed && styles.buttonPressed,
-  ]}
-  onPress={handleCertificateUpload}
->
-  <View style={styles.uploadIcon}>
-    <Text style={styles.uploadIconText}>↑</Text>
-  </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.uploadBox,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleCertificateUpload}
+          >
+            <View style={styles.uploadIcon}>
+              <Text style={styles.uploadIconText}>↑</Text>
+            </View>
 
-  <View style={styles.uploadContent}>
-    <Text style={styles.uploadTitle}>
-      {certificate ? certificate.name : 'Upload certificate'}
-    </Text>
+            <View style={styles.uploadContent}>
+              <Text style={styles.uploadTitle}>
+                {certificate ? certificate.name : 'Upload certificate'}
+              </Text>
 
-    <Text style={styles.uploadHelper}>
-      {certificate
-        ? 'Certificate selected'
-        : 'PDF or image • Max 10 MB'}
-    </Text>
-  </View>
+              <Text style={styles.uploadHelper}>
+                {certificate
+                  ? 'Certificate selected'
+                  : 'PDF or image • Max 10 MB'}
+              </Text>
+            </View>
 
-  <Text style={styles.uploadAction}>
-    {certificate ? 'Change' : 'Choose'}
-  </Text>
-</Pressable>
+            <Text style={styles.uploadAction}>
+              {certificate ? 'Change' : 'Choose'}
+            </Text>
+          </Pressable>
 
           <Pressable
             style={({ pressed }) => [
@@ -238,14 +245,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#172019',
     marginBottom: 16,
-    
+
   },
-sectionTitle2: {
+  sectionTitle2: {
     fontSize: 17,
     fontWeight: '800',
     color: '#172019',
     marginBottom: 16,
-    marginTop:16,
+    marginTop: 16,
   },
   label: {
     fontSize: 10,
@@ -298,56 +305,56 @@ sectionTitle2: {
   },
 
   uploadBox: {
-  minHeight: 64,
-  borderRadius: 13,
-  borderWidth: 1,
-  borderColor: '#DDE4DA',
-  borderStyle: 'dashed',
-  backgroundColor: '#FAFBF9',
-  paddingHorizontal: 12,
-  paddingVertical: 10,
-  flexDirection: 'row',
-  alignItems: 'center',
-},
+    minHeight: 64,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#DDE4DA',
+    borderStyle: 'dashed',
+    backgroundColor: '#FAFBF9',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 
-uploadIcon: {
-  width: 38,
-  height: 38,
-  borderRadius: 11,
-  backgroundColor: '#EAF1E7',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginRight: 11,
-},
+  uploadIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: '#EAF1E7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 11,
+  },
 
-uploadIconText: {
-  fontSize: 20,
-  fontWeight: '700',
-  color: '#315B38',
-},
+  uploadIconText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#315B38',
+  },
 
-uploadContent: {
-  flex: 1,
-},
+  uploadContent: {
+    flex: 1,
+  },
 
-uploadTitle: {
-  fontSize: 12,
-  fontWeight: '700',
-  color: '#172019',
-},
+  uploadTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#172019',
+  },
 
-uploadHelper: {
-  fontSize: 10,
-  color: '#8A938C',
-  marginTop: 3,
-},
+  uploadHelper: {
+    fontSize: 10,
+    color: '#8A938C',
+    marginTop: 3,
+  },
 
-uploadAction: {
-  fontSize: 11,
-  fontWeight: '800',
-  color: '#315B38',
-  marginLeft: 8,
-},
+  uploadAction: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#315B38',
+    marginLeft: 8,
+  },
 
   submitButton: {
     height: 48,

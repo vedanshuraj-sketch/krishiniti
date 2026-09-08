@@ -1,13 +1,14 @@
 import React from 'react';
-import {
-  Alert,
-  FlatList,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import
+  {
+    Alert,
+    FlatList,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+  } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type CropLot = {
   id: string;
@@ -53,8 +54,10 @@ const cropLots: CropLot[] = [
   },
 ];
 
-export default function ExploreScreen() {
-  const handleViewLot = (lot: CropLot) => {
+export default function ExploreScreen()
+{
+  const handleViewLot = (lot: CropLot) =>
+  {
     Alert.alert(
       `${lot.emoji} ${lot.crop} — Crop Lot`,
       `Quantity: ${lot.quantity}\nQuality: ${lot.grade}\nLocation: ${lot.location}\nExpected price: ${lot.price} / quintal\nAvailability: ${lot.available}`,

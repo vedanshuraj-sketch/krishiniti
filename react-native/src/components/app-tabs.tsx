@@ -8,28 +8,44 @@ export default function AppTabs() {
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+  <NativeTabs
+  backgroundColor={colors.background}
+  indicatorColor={colors.backgroundElement}
+  labelVisibilityMode="labeled"
+  labelStyle={{
+    default: { color: colors.text },
+    selected: { color: colors.text },
+  }}
+>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
+       
         />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="market-intellegence">
-  <NativeTabs.Trigger.Label>Market</NativeTabs.Trigger.Label>
-</NativeTabs.Trigger>
+        <NativeTabs.Trigger.Label>Market</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/market.png')}
+          
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="crop-lot">
+        <NativeTabs.Trigger.Label>Sell</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/sell.png')}
+         
+        />
+      </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Buy</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
+          src={require('@/assets/images/tabIcons/buy.png')}
+                  />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

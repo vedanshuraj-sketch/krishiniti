@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Expo
+.expo/
+.expo-shared/
+
+# React Native / Metro
+.metro-health-check*
+*.log
+
+# Android
+.gradle/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.hprof
+
+# iOS
+ios/Pods/
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage
+coverage/
+
+# Buck / Buck2
+.buckd/
+buck-out/

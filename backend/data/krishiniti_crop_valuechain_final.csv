@@ -1,0 +1,106 @@
+crop_name,botanical_name,plant_part,industry,product,value_level,buyer_type,processing_required
+Banana,Musa paradisiaca,Fruit (Ripe),Food,Banana Puree/Pulp,High,Processor,Yes
+Banana,Musa paradisiaca,Fruit (Raw),Food,Banana Chips,Medium,Manufacturer,Yes
+Banana,Musa paradisiaca,Peel,Nutraceutical,Banana Peel Flour,Medium,Processor,Yes
+Banana,Musa paradisiaca,Pseudostem,Textile,Banana Fiber,High,Textile Mill,Yes
+Banana,Musa paradisiaca,Pseudostem,Packaging,Banana Fiber Packaging Sheets,Medium,Manufacturer,Yes
+Banana,Musa paradisiaca,Leaf,Packaging,Banana Leaf (Eco-friendly Plates),Low,Wholesaler,No
+Moringa,Moringa oleifera,Leaf,Nutraceutical,Moringa Leaf Powder,High,Exporter,Yes
+Moringa,Moringa oleifera,Seed,Essential Oil,Moringa Seed Oil (Ben Oil),High,Oil Processor,Yes
+Moringa,Moringa oleifera,Seed,Pharma,Moringa Seed Extract Capsules,High,Pharma Company,Yes
+Moringa,Moringa oleifera,Pod,Food,Fresh Drumstick (Vegetable),Medium,Wholesaler,No
+Moringa,Moringa oleifera,Flower,Nutraceutical,Moringa Flower Tea,Medium,Processor,Yes
+Moringa,Moringa oleifera,Seed Cake,Animal Feed,Moringa Oil Cake,Low,Feed Company,No
+Lemon,Citrus limon,Fruit (Juice),Food,Lemon Juice Concentrate,High,Processor,Yes
+Lemon,Citrus limon,Peel,Essential Oil,Lemon Essential Oil,High,Oil Processor,Yes
+Lemon,Citrus limon,Peel,Food,Citrus Pectin,Medium,Manufacturer,Yes
+Lemon,Citrus limon,Peel,Cosmetics,Lemon Peel Extract,Medium,Manufacturer,Yes
+Lemon,Citrus limon,Seed,Pharma,Lemon Seed Oil Extract,Low,Pharma Company,Yes
+Lemon,Citrus limon,Fruit (Fresh),Export,Fresh Lemon,High,Exporter,No
+Mango,Mangifera indica,Fruit (Ripe Pulp),Food,Mango Pulp/Puree,High,Processor,Yes
+Mango,Mangifera indica,Fruit (Raw),Food,Mango Pickle,Medium,Manufacturer,Yes
+Mango,Mangifera indica,Peel,Nutraceutical,Mango Peel Powder,Medium,Processor,Yes
+Mango,Mangifera indica,Kernel,Cosmetics,Mango Kernel Butter,High,Manufacturer,Yes
+Mango,Mangifera indica,Kernel,Animal Feed,Mango Kernel Meal,Low,Feed Company,Yes
+Mango,Mangifera indica,Fruit (Fresh),Export,Fresh Mango,High,Exporter,No
+Coconut,Cocos nucifera,Husk,Textile,Coconut Coir Fiber,High,Textile Mill,Yes
+Coconut,Cocos nucifera,Husk,Packaging,Coco Peat (Coir Pith),Medium,Manufacturer,Yes
+Coconut,Cocos nucifera,Kernel (Copra),Essential Oil,Coconut Oil,High,Oil Processor,Yes
+Coconut,Cocos nucifera,Shell,Bioenergy,Coconut Shell Charcoal,Medium,Manufacturer,Yes
+Coconut,Cocos nucifera,Water,Food,Packaged Coconut Water,High,Exporter,Yes
+Coconut,Cocos nucifera,Kernel,Cosmetics,Virgin Coconut Oil,High,Manufacturer,Yes
+Turmeric,Curcuma longa,Rhizome,Food,Turmeric Powder,High,Processor,Yes
+Turmeric,Curcuma longa,Rhizome,Pharma,Curcumin Extract,High,Pharma Company,Yes
+Turmeric,Curcuma longa,Rhizome,Cosmetics,Turmeric Oleoresin/Extract,Medium,Manufacturer,Yes
+Turmeric,Curcuma longa,Rhizome,Export,Dried Turmeric Fingers,High,Exporter,Yes
+Turmeric,Curcuma longa,Leaf,Essential Oil,Turmeric Leaf Oil,Low,Oil Processor,Yes
+Ginger,Zingiber officinale,Rhizome,Food,Dried Ginger Powder (Sonth),High,Processor,Yes
+Ginger,Zingiber officinale,Rhizome,Essential Oil,Ginger Oil,High,Oil Processor,Yes
+Ginger,Zingiber officinale,Rhizome,Pharma,Ginger Oleoresin,High,Pharma Company,Yes
+Ginger,Zingiber officinale,Rhizome,Food,Ginger Candy/Preserve,Medium,Manufacturer,Yes
+Ginger,Zingiber officinale,Rhizome,Export,Fresh Ginger,Medium,Exporter,No
+Onion,Allium cepa,Bulb,Food,Dehydrated Onion Flakes/Powder,High,Processor,Yes
+Onion,Allium cepa,Bulb,Export,Fresh Onion,High,Exporter,No
+Onion,Allium cepa,Peel,Nutraceutical,Onion Peel Extract (Quercetin),Medium,Manufacturer,Yes
+Onion,Allium cepa,Bulb,Pharma,Onion Extract Capsules,Low,Pharma Company,Yes
+Onion,Allium cepa,Peel,Animal Feed,Onion Peel Meal,Low,Feed Company,No
+Tomato,Solanum lycopersicum,Fruit,Food,Tomato Puree/Paste,High,Processor,Yes
+Tomato,Solanum lycopersicum,Fruit,Food,Tomato Ketchup/Sauce,High,Manufacturer,Yes
+Tomato,Solanum lycopersicum,Seed,Essential Oil,Tomato Seed Oil,Medium,Oil Processor,Yes
+Tomato,Solanum lycopersicum,Pomace,Animal Feed,Tomato Pomace Meal,Low,Feed Company,No
+Tomato,Solanum lycopersicum,Peel,Nutraceutical,Lycopene Extract,High,Manufacturer,Yes
+Chilli,Capsicum annuum,Fruit (Dried),Food,Chilli Powder,High,Processor,Yes
+Chilli,Capsicum annuum,Fruit,Pharma,Oleoresin Capsicum,High,Pharma Company,Yes
+Chilli,Capsicum annuum,Fruit,Export,Dried Whole Chilli,High,Exporter,Yes
+Chilli,Capsicum annuum,Seed,Animal Feed,Chilli Seed Meal,Low,Feed Company,No
+Chilli,Capsicum annuum,Fruit,Cosmetics,Capsaicin Extract,Medium,Manufacturer,Yes
+Potato,Solanum tuberosum,Tuber,Food,Potato Starch,High,Processor,Yes
+Potato,Solanum tuberosum,Tuber,Food,Potato Chips/Flakes,High,Manufacturer,Yes
+Potato,Solanum tuberosum,Tuber,Export,Fresh Potato,Medium,Exporter,No
+Potato,Solanum tuberosum,Peel,Animal Feed,Potato Peel Meal,Low,Feed Company,No
+Potato,Solanum tuberosum,Tuber,Bioenergy,Potato Starch-based Bioethanol,Medium,Manufacturer,Yes
+Sugarcane,Saccharum officinarum,Stem/Cane,Food,Sugar (Sucrose),High,Processor,Yes
+Sugarcane,Saccharum officinarum,Stem/Cane,Bioenergy,Ethanol,High,Manufacturer,Yes
+Sugarcane,Saccharum officinarum,Bagasse,Packaging,Bagasse Pulp Packaging Board,Medium,Manufacturer,Yes
+Sugarcane,Saccharum officinarum,Molasses,Food,Jaggery/Molasses,Medium,Processor,Yes
+Sugarcane,Saccharum officinarum,Bagasse,Bioenergy,Bagasse-based Cogeneration Power,Low,Manufacturer,Yes
+Cotton,Gossypium hirsutum,Lint (Fiber),Textile,Cotton Yarn/Fabric,High,Textile Mill,Yes
+Cotton,Gossypium hirsutum,Seed,Essential Oil,Cottonseed Oil,High,Oil Processor,Yes
+Cotton,Gossypium hirsutum,Seed Cake,Animal Feed,Cottonseed Cake,Medium,Feed Company,No
+Cotton,Gossypium hirsutum,Linters,Pharma,Pharma-grade Cellulose,Medium,Manufacturer,Yes
+Cotton,Gossypium hirsutum,Lint,Export,Raw Cotton Bales,High,Exporter,No
+Groundnut,Arachis hypogaea,Seed (Kernel),Essential Oil,Groundnut Oil,High,Oil Processor,Yes
+Groundnut,Arachis hypogaea,Seed Cake,Animal Feed,Groundnut Oil Cake,Medium,Feed Company,No
+Groundnut,Arachis hypogaea,Kernel,Food,Roasted/Salted Groundnut,Medium,Manufacturer,Yes
+Groundnut,Arachis hypogaea,Shell,Bioenergy,Groundnut Shell Briquettes,Low,Manufacturer,Yes
+Groundnut,Arachis hypogaea,Kernel,Export,Fresh/Dried Groundnut,High,Exporter,No
+Papaya,Carica papaya,Fruit (Ripe),Food,Papaya Pulp/Puree,Medium,Processor,Yes
+Papaya,Carica papaya,Fruit (Raw/Latex),Pharma,Papain Enzyme,High,Pharma Company,Yes
+Papaya,Carica papaya,Seed,Cosmetics,Papaya Seed Oil,Medium,Manufacturer,Yes
+Papaya,Carica papaya,Fruit (Ripe),Export,Fresh Papaya,Medium,Exporter,No
+Papaya,Carica papaya,Leaf,Nutraceutical,Papaya Leaf Extract,Medium,Processor,Yes
+Pomegranate,Punica granatum,Fruit (Arils),Food,Pomegranate Juice Concentrate,High,Processor,Yes
+Pomegranate,Punica granatum,Peel,Nutraceutical,Pomegranate Peel Extract (Punicalagin),High,Manufacturer,Yes
+Pomegranate,Punica granatum,Seed,Essential Oil,Pomegranate Seed Oil,High,Oil Processor,Yes
+Pomegranate,Punica granatum,Fruit (Fresh),Export,Fresh Pomegranate,High,Exporter,No
+Pomegranate,Punica granatum,Peel,Cosmetics,Pomegranate Peel Extract (Cosmetic Grade),Medium,Manufacturer,Yes
+Guava,Psidium guajava,Fruit (Ripe),Food,Guava Pulp/Puree,High,Processor,Yes
+Guava,Psidium guajava,Leaf,Nutraceutical,Guava Leaf Extract,Medium,Manufacturer,Yes
+Guava,Psidium guajava,Fruit,Food,Guava Jam/Jelly,Medium,Manufacturer,Yes
+Guava,Psidium guajava,Seed,Essential Oil,Guava Seed Oil,Low,Oil Processor,Yes
+Guava,Psidium guajava,Fruit (Fresh),Export,Fresh Guava,Medium,Exporter,No
+Garlic,Allium sativum,Bulb,Food,Garlic Powder/Flakes,High,Processor,Yes
+Garlic,Allium sativum,Bulb,Pharma,Garlic Extract Capsules (Allicin),High,Pharma Company,Yes
+Garlic,Allium sativum,Bulb,Essential Oil,Garlic Oil,Medium,Oil Processor,Yes
+Garlic,Allium sativum,Bulb,Export,Fresh Garlic,Medium,Exporter,No
+Garlic,Allium sativum,Peel,Animal Feed,Garlic Peel Meal,Low,Feed Company,No
+Drumstick,Moringa oleifera,Root,Pharma,Moringa Root Extract,Medium,Pharma Company,Yes
+Drumstick,Moringa oleifera,Bark,Nutraceutical,Moringa Bark Extract,Low,Manufacturer,Yes
+Drumstick,Moringa oleifera,Pod,Food,Dehydrated Drumstick Powder,Medium,Processor,Yes
+Drumstick,Moringa oleifera,Gum/Resin,Pharma,Moringa Gum,Low,Pharma Company,Yes
+Drumstick,Moringa oleifera,Pod,Export,Fresh Drumstick (Export Grade),Medium,Exporter,No
+Coriander,Coriandrum sativum,Seed,Food,Coriander Powder,High,Processor,Yes
+Coriander,Coriandrum sativum,Seed,Essential Oil,Coriander Seed Oil,Medium,Oil Processor,Yes
+Coriander,Coriandrum sativum,Leaf,Export,Fresh Coriander Leaves,Medium,Exporter,No
+Coriander,Coriandrum sativum,Seed,Export,Whole Coriander Seed,High,Exporter,Yes
+Coriander,Coriandrum sativum,Leaf,Nutraceutical,Coriander Leaf Extract,Low,Manufacturer,Yes
